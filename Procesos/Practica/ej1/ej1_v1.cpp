@@ -8,7 +8,6 @@
 #include <string>
 
 #define PIPE_GROUPS 2
-#define LENGTH 64
 #define PROCESOS_HIJOS 2
 #define PIPES_POR_GRUPO 2
 #define DIVISION_PALABRAS 2
@@ -40,7 +39,7 @@ int main(){
         }
     }
     
-    std::cout << "Escribe tu contraseña: ";
+    std::cout << "Escribe tu contraseña : ";
     std::getline(std::cin, password);
 
     mitad = password.size() / 2;
