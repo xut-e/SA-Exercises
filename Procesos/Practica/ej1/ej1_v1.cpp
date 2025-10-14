@@ -1,3 +1,4 @@
+//Incluimos las librerías necesarias.
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -7,17 +8,21 @@
 #include <vector>
 #include <string>
 
+//Definimos variables que nos puede interesar cambiar más adelante.
 #define PIPE_GROUPS 2
 #define PROCESOS_HIJOS 2
 #define PIPES_POR_GRUPO 2
 #define DIVISION_PALABRAS 2
 
+//Hacemos una estructura para cada comunicación (como cada comunicación será obtenida mediante dos pipes) ----> pipe_group[(A-->B),(B-->A)].
 struct ReadWrite{
     int pipe_group[PIPES_POR_GRUPO][2];
 };
 
+//Función de cifrado, esta es un cesar +3, super sencilla, pero se puede complicar mucho más, encuentro que para este ejercicio no tiene ventajas. Le pasamos mitad como dirección, para que pueda editarla.
 void cifrar(std::string& mitad){
 
+    //Sumamos 3 espacios a cada caracter (técnicamente no es cesar+3 porque la z no vuelve a comenzar el abecedario, pero para el ejemplo es más que suficiente).
     for (size_t i = 0; i < mitad.size(); i++)
     {
         mitad[i] += 3;
@@ -25,7 +30,9 @@ void cifrar(std::string& mitad){
     
 }
 
+//Función principal
 int main(){
+    //Declaramos el vector que almacenará nuestros pipes de comunicación, dos por cada comunicación.
     std::vector<ReadWrite> pipes(PIPE_GROUPS);
     std::string mitad1, mitad2, password;
     std::vector<std::string> mitad_inicial(DIVISION_PALABRAS), mitad_crypt(DIVISION_PALABRAS), mitad_final(DIVISION_PALABRAS);
