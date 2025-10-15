@@ -34,10 +34,12 @@ void cifrar(std::string& mitad){
 int main(){
     //Declaramos el vector que almacenará nuestros pipes de comunicación, dos por cada comunicación.
     std::vector<ReadWrite> pipes(PIPE_GROUPS);
+    //Declaramos las variables principales.
     std::string mitad1, mitad2, password;
     std::vector<std::string> mitad_inicial(DIVISION_PALABRAS), mitad_crypt(DIVISION_PALABRAS), mitad_final(DIVISION_PALABRAS);
     int mitad = 0;
 
+    //Inicializamos todos los pipes.
     for (size_t i = 0; i < PIPE_GROUPS; i++)
     {
         for (size_t j = 0; j < PIPES_POR_GRUPO; j++)
@@ -46,6 +48,7 @@ int main(){
         }
     }
     
+    //Guardamos la contraseña capturada y dividimoos su longitud en 2, si es impar hacemos que la primea mitad sea un o más larga.
     std::cout << "Escribe tu contraseña : ";
     std::getline(std::cin, password);
 
@@ -55,55 +58,73 @@ int main(){
     {
         mitad += 1;
     }
-    
+
+    //Gurdamos las mitades.
     mitad_inicial[0] = password.substr(0, mitad);
     mitad_inicial[1] = password.substr(mitad);
 
+    //Ajustamos el tamaño de los vectores, sabiendo cuál es la mitad ahora (reserve no vale aquí).
     for (size_t i = 0; i < DIVISION_PALABRAS; i++)
     {
         mitad_crypt[i].resize(mitad_inicial[i].size());
         mitad_final[i].resize(mitad_inicial[i].size());        
     }
     
-
+    //Bucle que crea los hijos. Podemos hacerlo todo en un bucle tan limpio gracias a haber factorizado las variables en estructuras iterables.
     for (size_t i = 0; i < PROCESOS_HIJOS; i++)
     {
+        //Cada uno se encarga de su mitad.
         if (fork() == 0)
         {
+            //Manejo de extremos inutilizados.
             close(pipes[i].pipe_group[0][1]);
 
+            //Leemos y guardamos en la vaiable correspondiente. Como empezamos con un read se quedarán esperando hasta recibir cada uno su mitad.
             read(pipes[i].pipe_group[0][0], mitad_crypt[i].data(), mitad_crypt[i].size());
 
+            //Más manejo de extremos.
             close(pipes[i].pipe_group[0][0]);
 
+            //Mandamos a la función cifrar cada hijo a su mitad.
             cifrar(mitad_crypt[i]);
 
+            //Manejamos extremos.
             close(pipes[i].pipe_group[1][0]);
 
+            //Enviamos la mitad cifrada al proceso padre.
             write(pipes[i].pipe_group[1][1], mitad_crypt[i].data(), mitad_crypt[i].size());
 
+            //Manejamos extremos de nuevo.
             close(pipes[i].pipe_group[1][1]);
             
+            //Cerramos cada uno de los procesos con código exitoso.
             exit(0);
         }
         
     }
 
+    //Mandamos desde el padre cada una de las mitades a su hijo correspondiente.
     for (size_t i = 0; i < PIPE_GROUPS; i++)
     {
+        //Manejamos extremos.
         close(pipes[i].pipe_group[0][0]);
 
+        //Escribimos las mitades en su pipe correspondiente.
         write(pipes[i].pipe_group[0][1], mitad_inicial[i].data(), mitad_inicial[i].size());
 
+        //Manejamos extremos.
         close(pipes[i].pipe_group[0][1]);
     }
     
-
-    wait(NULL);
-    wait(NULL);
+    //Hacemos que el padre espere a cada uno de sus hijos.
+    for (int i = 0; i < PROCESOS_HIJOS; i++)
+    {
+        wait(NULL);    
+    }
 
     std::cout << "La contraseña final es: ";
 
+    //Mostramos la contraseña cifrada, manejando extremos y leyendo lo que llega de las pipes.
     for (size_t i = 0; i < PIPE_GROUPS; i++)
     {
         close(pipes[i].pipe_group[0][1]);
@@ -116,7 +137,5 @@ int main(){
 
         std::cout << mitad_final[i];
     }
-    
-    
     
 }
